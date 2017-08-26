@@ -1,0 +1,97 @@
+---
+title: "Course05__Project1"
+output: html_document
+keep_md: true 
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Title: Project 1-    Author: Aner Weiss
+
+### Loading and preprocessing the data
+```{r load}
+setwd("C:/Users/Aner/Desktop/DATA_SCIENCE_SPECIALIZATION/05_ReproducibleResearch/Project1/")
+f<-'activity.csv'
+data<-read.csv(f)
+View(data)
+```
+
+### What is mean total number of steps taken per day?
+
+```{r tot_daily}
+library(base)
+library(lattice)
+library(ggplot2)
+#total number of steps taken per day
+#TotStepsPerDay<-rowsum(data$steps, data$date,na.rm=TRUE) 
+TotStepsPerDay<-tapply(data$steps, data$date, sum, na.rm=TRUE) 
+# histogram of the total number of steps taken each day
+hist(TotStepsPerDay,breaks=30)
+#Calculate and report the mean and median of the total number of steps taken per day
+mean(TotStepsPerDay)
+median(TotStepsPerDay)
+```
+
+### What is the average daily activity pattern?
+```{r av_daily }
+# Time series plotof the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+AvSteps<-tapply(data$steps, data$interval, mean, na.rm=TRUE) 
+plot(AvSteps, type="l", xlab= "5min interval index #", ylab="Average steps across all days", col="blue" , lwd=2)
+#Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+which(AvSteps==max(AvSteps)) #data$interval[which(AvSteps==max(AvSteps)) ]  
+```
+
+### Imputing missing values
+```{r}
+# Calculate and report  total number of missing values in dataset (i.e. total number of rows with NAs)
+sum(is.na(data$steps)) 
+
+#Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+#Create a new dataset that is equal to the original dataset but with the missing data filled in.
+data_filled<-data
+for(i in 1:length(data$steps)){
+  if (is.na(data$steps[i])==TRUE) 
+    #data_filled$steps[i] <- mean(data[data$date==data$date[i],1], na.rm = TRUE)
+    data_filled$steps[i] <- mean(data$steps, na.rm = TRUE)
+}
+sum(is.na(data_filled$steps)) 
+
+
+#Make a histogram of the total number of steps taken each day and Calculate and report #the mean and median total number of steps taken per day. Do these values differ from #the estimates from the first part of the assignment?
+TotStepsPerDay<-tapply(data_filled$steps, data_filled$date, sum, na.rm=TRUE) 
+# histogram of the total number of steps taken each day
+hist(TotStepsPerDay,breaks=30)
+#Calculate and report the mean and median of the total number of steps taken per day
+mean(TotStepsPerDay)
+median(TotStepsPerDay)
+
+#What is the impact of imputing #missing data on the estimates of the total daily number of steps?
+## The Mean and Median Totl Number of daily steps increased after replacing the NANs
+```
+
+### Are there differences in activity patterns between weekdays and weekends?
+```{r}
+#For this part the weekdays() function may be of some help here. Use the dataset with #the filled-in missing values for this part.
+
+#Create a new factor variable in the dataset with two levels - "weekday" and "weekend" #indicating whether a given date is a weekday or weekend day.
+data_filled$date <- as.Date(data_filled$date)
+#create a vector of weekdays
+weekdays1 <- c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
+#Use `%in%` and `weekdays` to create a logical vector
+#convert to `factor` and specify the `levels/labels`
+data_filled$wDay <- factor((weekdays(data_filled$date) %in% weekdays1), 
+         levels=c(FALSE, TRUE), labels=c('weekend', 'weekday') )
+
+
+#Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute #interval (x-axis) and the average number of steps taken, averaged across all weekday #days or weekend days (y-axis). 
+
+AvSteps_WEEKDAYS<-tapply(data_filled$steps[data_filled$wDay=='weekday'], data_filled$interval[data_filled$wDay=='weekday'], mean) 
+plot(AvSteps_WEEKDAYS, type="l", xlab= "5min interval index #", ylab="Average steps across all WEEK days", col="blue" , lwd=2)
+
+AvSteps_WEEKENDS<-tapply(data_filled$steps[data_filled$wDay=='weekend'], data_filled$interval[data_filled$wDay=='weekend'], mean) 
+plot(AvSteps_WEEKENDS, type="l", xlab= "5min interval index #", ylab="Average steps across all WEEK ENDS", col="blue" , lwd=2)
+
+```
